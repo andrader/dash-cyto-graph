@@ -1,0 +1,9 @@
+networkx
+dash
+dash-cytoscape
+dash-bootstrap-components
+plotly
+pandas
+openpyxl
+ipykernel
+matplotlib
