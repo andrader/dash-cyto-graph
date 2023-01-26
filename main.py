@@ -6,10 +6,10 @@ import dash_cytoscape as cyto
 cyto.load_extra_layouts()
 
 from utils import load_json
-from paths import PATH_DATA
+from paths import PATH_CYTO_DATA
 from stylesheet import stylesheet
 
-data = load_json(PATH_DATA)
+data = load_json(PATH_CYTO_DATA)
 
 #https://github.com/cytoscape/cytoscape.js-klay
 

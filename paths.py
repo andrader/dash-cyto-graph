@@ -1,2 +1,2 @@
 
-PATH_DATA = 'input/data.json'
+PATH_CYTO_DATA = 'input/data.json'
