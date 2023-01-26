@@ -1,11 +1,39 @@
 stylesheet = [
     {
+        "selector": "core",
+        "style":{
+            "selection-box-color": "red"
+        }
+    },
+    {
         "selector": "node",
         "style": {
-            "label": "data(name)",
+            #"label": "data(type)",
+            "content": 'data(name)',
             "shape": "round-rectangle",
-            "width": "(data(degree))+10",
-            "height": "data(degree)+10",
+            "width": "100",
+            "height": "60",#"data(degree)",
+            "text-valign": "center",
+            "text-halign": "center",
+            "text-wrap": "wrap",
+            "text-max-width": 80,
+            "background-opacity": 0.5,
+            "border-width": 1,
+            "border-style": "solid",
+            "border-color": "black",
+            "border-opacity": 0.5,
+        },
+    },
+    {
+        "selector": 'node[type="io"]',
+        "style": {
+            "background-color": "lightgray",
+            
+        },
+    },
+    {
+        "selector": 'node[type="process"]',
+        "style": {
             "background-color": "green",
         },
     },
