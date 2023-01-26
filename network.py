@@ -1,16 +1,20 @@
 import pandas as pd
 import networkx as nx
 
+from paths import PATH_DATA
+from utils import dump_json
+
 def load_data():
-
     df = pd.read_excel("./input/data.xlsx")
-
     return df
 
-def explode_input_output(df: pd.DataFrame, source, target, sep = "\s*,\s*"):
+def split_and_explode(df: pd.DataFrame, *colunms, sep = "\s*,\s*"):
+
+    colunms = list(colunms)
     df = df.copy()
-    df[[source,target]] = df[[source,target]].astype('string').apply(lambda x: x.str.split(sep))
-    df = df.explode([source]).explode([target])
+    df[colunms] = df[colunms].astype('string').apply(lambda x: x.str.split(sep))
+    for col in colunms:
+        df = df.explode(col)
     return df
 
 def get_map_io_to_name(dfedge, source, target, node_name):
@@ -24,7 +28,11 @@ def get_map_io_to_name(dfedge, source, target, node_name):
     return all_io
 
 
-
+def get_edges(df, source, target):
+    df = split_and_explode(df, source, target)
+    df = df[[source, target]]
+    df = df.set_axis(["source", "target"], axis=1)
+    return df
 
 source = "input"
 target = "output"
@@ -33,38 +41,51 @@ node_name = "processo"
 
 dfraw = load_data()
 
+dfraw = dfraw.replace({
+    "A":"AAAAAA AAA AAAAAA AAAAAAAAAAAAAAA", 
+    "C": "CCCCCCC CCCCCC"})
 
 
-# edges i/o level
-dfedge = explode_input_output(dfraw, source, target)
 
-# map output name -> process name
-map_io_to_name = get_map_io_to_name(dfedge, source, target, node_name)
 
-dfedge["source"] = dfedge[source].map(map_io_to_name['name'])
-dfedge["target"] = dfedge[target].map(map_io_to_name['name'])
+# junta grafos
+# input > processo
+# processo > output
+dfedge = pd.concat([
+get_edges(dfraw, "input", "processo"),
+get_edges(dfraw, "processo", "output")
+])
 
 dfedge['weight'] = 1
-dfedge['edge_name'] = dfedge[source]
+dfedge['edge_name'] = ""#dfedge[source]
 
-gby = dfedge.groupby(["source", "target"], as_index=False, sort=False, dropna=False)
-#df = gby[['weight']].agg('sum')
+dfedge['label_width'] = ""
 
-df = dfedge.copy()
+dfedge
 
+# TO GRAPH
+g: nx.DiGraph = nx.from_pandas_edgelist(dfedge, source="source", target="target", edge_attr=True, create_using=nx.DiGraph)
 
-g: nx.DiGraph = nx.from_pandas_edgelist(df, source="source", target="target", edge_attr=True, create_using=nx.DiGraph)
+#
+list(nx.dfs_edges(g, "D"))
+list(nx.edge_dfs(g, "D"))
 
+df_nodes = pd.Series(g.nodes.keys()).to_frame("node")
 
-nx.set_node_attributes(g, dict(g.degree()), name='degree')
+df_nodes['degree'] = df_nodes['node'].map(dict(g.degree()))
+df_nodes['type'] = df_nodes['node'].isin(dfraw['processo']).map({False:"io", True:"process"})
 
+width = 20
+df_nodes['label'] = df_nodes['node'].str.wrap(width)
+df_nodes['label_width'] = df_nodes['label'].str.len() % width
+df_nodes['label_height'] = df_nodes['label'].str.contains("\n")+1
+
+df_nodes = df_nodes.set_index('node')
+
+nx.set_node_attributes(g, df_nodes.to_dict('index'))
+
+# EXPORT
 data = nx.cytoscape_data(g)
-
-data['elements']
-
-from paths import PATH_DATA
-from utils import dump_json
-
+data['elements']['nodes']
 path = PATH_DATA
-
 dump_json(data, path)
